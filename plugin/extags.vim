@@ -12,6 +12,10 @@ if !exists('g:ex_tags_winpos')
     let g:ex_tags_winpos = 'bottom'
 endif
 
+if !exists('g:ex_tags_ignore_case')
+    let g:ex_tags_ignore_case = 1
+endif
+
 if !exists('g:ex_tags_enable_help')
     let g:ex_tags_enable_help = 1
 endif
@@ -19,8 +23,8 @@ endif
 "}}}
 
 " commands {{{1
-" command! -n=1 -complete=customlist,ex#compl_by_symbol TSelect call extags#select('<args>', '-s')
-command! EXTagsCWord call extags#select(expand('<cword>'), '-s')
+" command! -n=1 -complete=customlist,ex#compl_by_symbol TSelect call extags#select('<args>')
+command! EXTagsCWord call extags#select(expand('<cword>'))
 
 command! EXTagsToggle call extags#toggle_window()
 command! EXTagsOpen call extags#open_window()

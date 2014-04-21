@@ -181,42 +181,45 @@ function extags#confirm_select(modifier)
 endfunction
 
 " extags#select {{{2
-function extags#select( pattern, option )
-    " TODO
-    " let s:confirm_at = -1
-    " let id_path = s:id_file
+function extags#select( pattern )
+    " strip white space.
+    let in_tag = substitute (a:tag, '\s\+', '', 'g')
+    if match(in_tag, '^\(\t\|\s\)') != -1
+        return
+    endif
 
-    " " ignore case setup
-    " let ignore_case = g:ex_tags_ignore_case
-    " " smartcase check
-    " if match(a:pattern, '\u') != -1
-    "     let ignore_case = 0
-    " endif
+    " get taglist
+    " NOTE: we use \s\* which allowed the tag have white space at the end.
+    "       this is useful for lua. In current version of cTags(5.8), it
+    "       will parse the lua function with space if you define the function
+    "       as: functon foobar () instead of functoin foobar(). 
+    if s:exTS_ignore_case && (match(in_tag, '\u') == -1)
+        let in_tag = substitute( in_tag, '\', '\\\', "g" )
+        echomsg 'parsing ' . in_tag . '...(ignore case)'
+        let tag_list = taglist('\V\^'.in_tag.'\s\*\$')
+    else
+        let in_tag = substitute( in_tag, '\', '\\\', "g" )
+        echomsg 'parsing ' . in_tag . '...(no ignore case)'
+        let tag_list = taglist('\V\^\C'.in_tag.'\s\*\$')
+    endif
 
-    " " start search process
-    " if ignore_case
-    "     echomsg 'search ' . a:pattern . '...(case insensitive)'
-    "     let cmd = 'lid --result=grep -i -f"' . id_path . '" ' . a:option . ' ' . a:pattern
-    " else
-    "     echomsg 'search ' . a:pattern . '...(case sensitive)'
-    "     let cmd = 'lid --result=grep -f"' . id_path . '" ' . a:option . ' ' . a:pattern
-    " endif
-    " let result = system(cmd)
+    " open the global search window
+    call extags#open_window()
 
-    " " open the global search window
-    " call extags#open_window()
+    " clear screen and put new result
+    silent exec '1,$d _'
 
-    " " clear screen and put new result
-    " silent exec '1,$d _'
+    " add online help 
+    if g:ex_tags_enable_help
+        silent call append ( 0, s:help_text )
+        silent exec '$d'
+        let start_line = len(s:help_text)
+    else
+        let start_line = 0
+    endif
 
-    " " add online help 
-    " if g:ex_tags_enable_help
-    "     silent call append ( 0, s:help_text )
-    "     silent exec '$d'
-    "     let start_line = len(s:help_text)
-    " else
-    "     let start_line = 0
-    " endif
+    "
+    " call s:show_taglist ( tag_list )
 
     " " put the result
     " silent exec 'normal ' . start_line . 'g'
@@ -225,13 +228,6 @@ function extags#select( pattern, option )
     " let text = header . "\n" . result
     " silent put =text
     " let end_line = line('$')
-
-    " " sort the search result
-    " if g:ex_tags_enable_sort == 1
-    "     if (end_line-start_line) <= g:ex_tags_sort_lines_threshold
-    "         call s:sort_search_result ( start_line, end_line )
-    "     endif
-    " endif
 
     " " init search state
     " silent normal gg
