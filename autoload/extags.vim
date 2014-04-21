@@ -181,7 +181,60 @@ function extags#confirm_select(modifier)
 endfunction
 
 " extags#select {{{2
-function extags#select( pattern )
+
+function s:convert_filename(filename)
+    return fnamemodify( a:filename, ':t' ) . ' (' . fnamemodify( a:filename, ':h' ) . ')'    
+endfunction
+
+function s:put_taglist( tag, tag_list )
+    " if empty tag_list, put the error result
+    if empty(a:tag_list)
+        silent put = 'Error: tag not found ==> ' . a:tag
+        silent put = ''
+        return
+    endif
+
+    " Init variable
+    let idx = 1
+    let pre_tag_name = a:tag_list[0].name
+    let pre_file_name = a:tag_list[0].filename
+    " put different file name at first
+    silent put = pre_tag_name
+    silent put = s:convert_filename(pre_file_name)
+    " put search result
+    for tag_info in a:tag_list
+        if tag_info.name !=# pre_tag_name
+            silent put = ''
+            silent put = tag_info.name
+            silent put = s:convert_filename(tag_info.filename)
+        elseif tag_info.filename !=# pre_file_name
+            silent put = s:convert_filename(tag_info.filename)
+        endif
+        " put search patterns
+        let quick_view = ''
+        if tag_info.cmd =~# '^\/\^' 
+            let quick_view = strpart( tag_info.cmd, 2, strlen(tag_info.cmd)-4 )
+            let quick_view = strpart( quick_view, match(quick_view, '\S') )
+        elseif tag_info.cmd =~# '^\d\+'
+            try
+                let file_list = readfile( fnamemodify(tag_info.filename,":p") )
+                let line_num = eval(tag_info.cmd) - 1 
+                let quick_view = file_list[line_num]
+                let quick_view = strpart( quick_view, match(quick_view, '\S') )
+            catch /^Vim\%((\a\+)\)\=:E/
+                let quick_view = "ERROR: can't get the preview from file!"
+            endtry
+        endif
+        " this will change the \/\/ to //
+        let quick_view = substitute( quick_view, '\\/', '/', "g" )
+        silent put = '        ' . idx . ': ' . quick_view
+        let idx += 1
+        let pre_tag_name = tag_info.name
+        let pre_file_name = tag_info.filename
+    endfor
+endfunction
+
+function extags#select( tag )
     " strip white space.
     let in_tag = substitute (a:tag, '\s\+', '', 'g')
     if match(in_tag, '^\(\t\|\s\)') != -1
@@ -193,7 +246,7 @@ function extags#select( pattern )
     "       this is useful for lua. In current version of cTags(5.8), it
     "       will parse the lua function with space if you define the function
     "       as: functon foobar () instead of functoin foobar(). 
-    if s:exTS_ignore_case && (match(in_tag, '\u') == -1)
+    if g:ex_tags_ignore_case && (match(in_tag, '\u') == -1)
         let in_tag = substitute( in_tag, '\', '\\\', "g" )
         echomsg 'parsing ' . in_tag . '...(ignore case)'
         let tag_list = taglist('\V\^'.in_tag.'\s\*\$')
@@ -219,7 +272,7 @@ function extags#select( pattern )
     endif
 
     "
-    " call s:show_taglist ( tag_list )
+    call s:put_taglist ( a:tag, tag_list )
 
     " " put the result
     " silent exec 'normal ' . start_line . 'g'

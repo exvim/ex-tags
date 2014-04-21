@@ -9,9 +9,10 @@ syntax match ex_ts_help #^".*# contains=ex_ts_help_key
 syntax match ex_ts_help_key '^" \S\+:'hs=s+2,he=e-1 contained contains=ex_ts_help_comma
 syntax match ex_ts_help_comma ':' contained
 
-syntax region ex_ts_header start="^----------" end="----------"
-syntax region ex_ts_filename start="^[^"][^:]*" end=":" oneline
-syntax match ex_ts_linenr '\d\+:'
+syntax match ex_ts_header '^[^" ]\+'
+syntax match ex_ts_filename '^\S\+\s(.\+)$'
+syntax match ex_ts_nr '^        \d\+:'
+syntax match ex_ts_normal '^        \S.*$' contains=ex_ts_nr
 
 
 hi default link ex_ts_help Comment
@@ -20,7 +21,8 @@ hi default link ex_ts_help_comma Special
 
 hi default link ex_ts_header SpecialKey
 hi default link ex_ts_filename Directory
-hi default link ex_ts_linenr Special
+hi default link ex_ts_nr Special
+hi default link ex_ts_normal Normal
 
 let b:current_syntax = "extags"
 

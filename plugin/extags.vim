@@ -23,7 +23,7 @@ endif
 "}}}
 
 " commands {{{1
-" command! -n=1 -complete=customlist,ex#compl_by_symbol TSelect call extags#select('<args>')
+command! -n=1 -complete=customlist,ex#compl_by_symbol TSelect call extags#select('<args>')
 command! EXTagsCWord call extags#select(expand('<cword>'))
 
 command! EXTagsToggle call extags#toggle_window()
