@@ -14,4 +14,11 @@ silent! setlocal statusline=
 call extags#bind_mappings()
 " }}}1
 
+" autocmd {{{1
+augroup ex_tags
+    au!
+    au CursorMoved <buffer> :call extags#cursor_moved()
+augroup END
+" }}}1
+
 " vim:ts=4:sw=4:sts=4 et fdm=marker:

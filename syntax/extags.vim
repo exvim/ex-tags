@@ -13,6 +13,7 @@ syntax match ex_ts_header '^[^" ]\+'
 syntax match ex_ts_filename '^\S\+\s(.\+)$'
 syntax match ex_ts_nr '^        \d\+:'
 syntax match ex_ts_normal '^        \S.*$' contains=ex_ts_nr
+syntax match ex_ts_error '^Error:.*'
 
 
 hi default link ex_ts_help Comment
@@ -23,6 +24,7 @@ hi default link ex_ts_header SpecialKey
 hi default link ex_ts_filename Directory
 hi default link ex_ts_nr Special
 hi default link ex_ts_normal Normal
+hi default link ex_ts_error Error
 
 let b:current_syntax = "extags"
 

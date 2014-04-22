@@ -11,6 +11,10 @@ let s:help_text_short = [
             \ '',
             \ ]
 let s:help_text = s:help_text_short
+
+let s:tag_list = []
+let s:tag = ''
+let s:last_line_nr = -1
 " }}}
 
 " functions {{{1
@@ -125,59 +129,78 @@ function extags#toggle_zoom()
     endif
 endfunction
 
+" extags#cursor_moved {{{2
+function extags#cursor_moved()
+    let line_num = line('.')
+    if line_num == s:last_line_nr
+        return
+    endif
+
+    while match(getline('.'), '^\s\+\d\+:') == -1
+        if line_num > s:last_line_nr
+            if line('.') == line('$')
+                break
+            endif
+            silent exec 'normal! j'
+        else
+            if line('.') == 1
+                silent exec 'normal! 2j'
+                let s:last_line_nr = line_num - 1
+            endif
+            silent exec 'normal! k'
+        endif
+    endwhile
+
+    let s:last_line_nr = line('.')
+endfunction
+
 " extags#confirm_select {{{2
 " modifier: '' or 'shift'
 function extags#confirm_select(modifier)
-    " TODO
-    " " check if the line is valid file line
-    " let line = getline('.') 
+    " TODO: modifier
 
-    " " get filename 
-    " let filename = line
+    " read current line as search pattern
+    let cur_line = getline('.')
+    if match(cur_line, '^        \S.*$') == -1
+        call ex#warning('Pattern not found')
+        return
+    endif
 
-    " " NOTE: GSF,GSFW only provide filepath information, so we don't need special process.
-    " let idx = stridx(line, ':') 
-    " if idx > 0 
-    "     let filename = strpart(line, 0, idx) "DISABLE: escape(strpart(line, 0, idx), ' ') 
-    " endif 
+    let idx = match(cur_line, '\S')
+    let cur_line = strpart(cur_line, idx)
+    let idx = match(cur_line, ':')
+    let cur_tagidx = eval(strpart(cur_line, 0, idx))
 
-    " " check if file exists
-    " if findfile(filename) == '' 
-    "     call ex#warning( filename . ' not found!' ) 
-    "     return
-    " endif 
+    " jump by command
+    call ex#window#goto_edit_window()
 
-    " " confirm the selection
-    " let s:confirm_at = line('.')
-    " call ex#hl#confirm_line(s:confirm_at)
+    " file jump
+    let filename = fnamemodify(s:tag_list[cur_tagidx-1].filename,":p")
+    let filename = fnameescape(filename)
+    if bufnr('%') != bufnr(filename)
+        exe ' silent e ' . filename
+    endif
 
-    " " goto edit window
-    " call ex#window#goto_edit_window()
+    " cursor jump
+    let ex_cmd = s:tag_list[cur_tagidx-1].cmd
+    try
+        silent exe . ex_cmd
+    catch /^Vim\%((\a\+)\)\=:E/
+        " if ex_cmd is not digital, try jump again manual
+        if match( ex_cmd, '^\/\^' ) != -1
+            let pattern = strpart(ex_cmd, 2, strlen(ex_cmd)-4)
+            let pattern = '\V\^' . pattern . (pattern[len(pattern)-1] == '$' ? '\$' : '')
+            if search(pattern, 'w') == 0
+                call ex#warning('search pattern not found: ' . pattern)
+                return
+            endif
+        endif
+    endtry
 
-    " " open the file
-    " if bufnr('%') != bufnr(filename) 
-    "     exe ' silent e ' . escape(filename,' ') 
-    " endif 
-
-    " if idx > 0 
-    "     " get line number 
-    "     let line = strpart(line, idx+1) 
-    "     let idx = stridx(line, ":") 
-    "     let linenr  = eval(strpart(line, 0, idx)) 
-    "     exec ' call cursor(linenr, 1)' 
-
-    "     " jump to the pattern if the code have been modified 
-    "     let pattern = strpart(line, idx+2) 
-    "     let pattern = '\V' . substitute( pattern, '\', '\\\', "g" ) 
-    "     if search(pattern, 'cw') == 0 
-    "         call ex#warning('Line pattern not found: ' . pattern)
-    "     endif 
-    " endif 
-
-    " " go back to global search window 
-    " exe 'normal! zz'
-    " call ex#hl#target_line(line('.'))
-    " call ex#window#goto_plugin_window()
+    " go back to tags window
+    exe 'normal! zz'
+    call ex#hl#target_line(line('.'))
+    call ex#window#goto_plugin_window()
 endfunction
 
 " extags#select {{{2
@@ -187,22 +210,25 @@ function s:convert_filename(filename)
 endfunction
 
 function s:put_taglist( tag, tag_list )
+    let s:tag = a:tag
+    let s:tag_list = a:tag_list
+
     " if empty tag_list, put the error result
-    if empty(a:tag_list)
-        silent put = 'Error: tag not found ==> ' . a:tag
+    if empty(s:tag_list)
+        silent put = 'Error: tag not found => ' . s:tag
         silent put = ''
         return
     endif
 
     " Init variable
     let idx = 1
-    let pre_tag_name = a:tag_list[0].name
-    let pre_file_name = a:tag_list[0].filename
+    let pre_tag_name = s:tag_list[0].name
+    let pre_file_name = s:tag_list[0].filename
     " put different file name at first
     silent put = pre_tag_name
     silent put = s:convert_filename(pre_file_name)
     " put search result
-    for tag_info in a:tag_list
+    for tag_info in s:tag_list
         if tag_info.name !=# pre_tag_name
             silent put = ''
             silent put = tag_info.name
@@ -232,6 +258,11 @@ function s:put_taglist( tag, tag_list )
         let pre_tag_name = tag_info.name
         let pre_file_name = tag_info.filename
     endfor
+
+    " find the first item
+    silent normal gg
+    call search( '^\s*1:', 'w')
+    let s:last_line_nr = line('.')
 endfunction
 
 function extags#select( tag )
@@ -273,20 +304,6 @@ function extags#select( tag )
 
     "
     call s:put_taglist ( a:tag, tag_list )
-
-    " " put the result
-    " silent exec 'normal ' . start_line . 'g'
-    " let header = '---------- ' . a:pattern . ' ----------'
-    " let start_line += 1
-    " let text = header . "\n" . result
-    " silent put =text
-    " let end_line = line('$')
-
-    " " init search state
-    " silent normal gg
-    " let linenr = search(header,'w')
-    " silent call cursor(linenr,1)
-    " silent normal zz
 endfunction
 
 " }}}1
