@@ -171,6 +171,9 @@ function extags#confirm_select(modifier)
     let idx = match(cur_line, ':')
     let cur_tagidx = eval(strpart(cur_line, 0, idx))
 
+    let s:confirm_at = line('.')
+    call ex#hl#confirm_line(s:confirm_at)
+
     " jump by command
     call ex#window#goto_edit_window()
 
@@ -209,9 +212,7 @@ function s:convert_filename(filename)
     return fnamemodify( a:filename, ':t' ) . ' (' . fnamemodify( a:filename, ':h' ) . ')'    
 endfunction
 
-function s:put_taglist( tag, tag_list )
-    let s:tag = a:tag
-    let s:tag_list = a:tag_list
+function s:put_taglist()
 
     " if empty tag_list, put the error result
     if empty(s:tag_list)
@@ -287,6 +288,10 @@ function extags#select( tag )
         let tag_list = taglist('\V\^\C'.in_tag.'\s\*\$')
     endif
 
+    let s:confirm_at = -1
+    let s:tag = a:tag
+    let s:tag_list = tag_list
+
     " open the global search window
     call extags#open_window()
 
@@ -303,7 +308,7 @@ function extags#select( tag )
     endif
 
     "
-    call s:put_taglist ( a:tag, tag_list )
+    call s:put_taglist ()
 endfunction
 
 " }}}1
