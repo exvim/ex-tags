@@ -1,3 +1,16 @@
+- - -
+- [Intro](#intro)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Install ex-utility](#install-ex-utility)
+  - [Install ctags](#install-ctags)
+  - [Install ex-tags](#install-ex-tags)
+- [Usage](#usage)
+
+For more details, check [exVim's Docs: Tags and Symbols](http://exvim.github.io/docs/tags-and-symbols)
+
+- - -
+
 # Intro
 
 ex-tags is a Vim plugin which improves the usage of Vim's `:ts` function. It
