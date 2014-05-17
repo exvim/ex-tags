@@ -157,8 +157,6 @@ endfunction
 " extags#confirm_select {{{2
 " modifier: '' or 'shift'
 function extags#confirm_select(modifier)
-    " TODO: modifier
-
     " read current line as search pattern
     let cur_line = getline('.')
     if match(cur_line, '^        \S.*$') == -1
