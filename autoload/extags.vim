@@ -185,7 +185,7 @@ function extags#confirm_select(modifier)
     " cursor jump
     let ex_cmd = s:tag_list[cur_tagidx-1].cmd
     try
-        silent exe . ex_cmd
+        silent exe ex_cmd
     catch /^Vim\%((\a\+)\)\=:E/
         " if ex_cmd is not digital, try jump again manual
         if match( ex_cmd, '^\/\^' ) != -1
