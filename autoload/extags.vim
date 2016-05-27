@@ -180,6 +180,30 @@ function extags#confirm_select(modifier)
     " file jump
     let filename = fnamemodify(s:tag_list[cur_tagidx-1].filename,":p")
     let filename = fnameescape(filename)
+    if a:modifier == 'shift'
+        exe 'silent pedit ' . filename
+        silent! wincmd P
+        if &previewwindow
+            let ex_cmd = s:tag_list[cur_tagidx-1].cmd
+            try
+                silent exe . ex_cmd
+            catch /^Vim\%((\a\+)\)\=:E/
+                " if ex_cmd is not digital, try jump again manual
+                if match( ex_cmd, '^\/\^' ) != -1
+                    let pattern = strpart(ex_cmd, 2, strlen(ex_cmd)-4)
+                    let pattern = '\V\^' . pattern . (pattern[len(pattern)-1] == '$' ? '\$' : '')
+                    if search(pattern, 'w') == 0
+                        call ex#warning('search pattern not found: ' . pattern)
+                        return
+                    endif
+                endif
+            endtry
+            call ex#hl#target_line(line('.'))
+            wincmd p
+        endif
+        call ex#window#goto_plugin_window()
+    else
+
     if bufnr('%') != bufnr(filename)
         exe ' silent e ' . filename
     endif
@@ -204,6 +228,7 @@ function extags#confirm_select(modifier)
     exe 'normal! zz'
     call ex#hl#target_line(line('.'))
     call ex#window#goto_plugin_window()
+    endif
 endfunction
 
 " extags#select {{{2
